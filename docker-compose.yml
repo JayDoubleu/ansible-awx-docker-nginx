@@ -1,0 +1,86 @@
+version: '3'
+services:
+  awx_nginx:
+    image: awx_nginx
+    links:
+    - awx_web:awxweb
+    ports:
+    - 443:443
+    - 80:80
+    networks:
+    - backend
+  awx_task:
+    image: ansible/awx_task:latest
+    links:
+    - awx_web:awxweb
+    - memcached
+    - postgres
+    - rabbitmq
+    networks:
+    - backend
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_NAME: awx
+      DATABASE_PASSWORD: awxpass
+      DATABASE_PORT: 5432
+      DATABASE_USER: awx
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_VHOST: awx
+      SECRET_KEY: aabbcc
+    hostname: awx
+    user: root
+  awx_web:
+    image: ansible/awx_web:latest
+    links:
+    - memcached
+    - postgres
+    - rabbitmq
+    networks:
+    - backend
+
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_NAME: awx
+      DATABASE_PASSWORD: awxpass
+      DATABASE_PORT: 5432
+      DATABASE_USER: awx
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_VHOST: awx
+      SECRET_KEY: aabbcc
+    hostname: awxweb
+    user: root
+  memcached:
+    image: memcached:alpine
+    networks:
+    - backend
+
+  postgres:
+    image: postgres:9.6
+    networks:
+    - backend
+
+    environment:
+      POSTGRES_DB: awx
+      POSTGRES_PASSWORD: awxpass
+      POSTGRES_USER: awx
+  rabbitmq:
+    image: rabbitmq:3
+    networks:
+    - backend
+
+    environment:
+      RABBITMQ_DEFAULT_VHOST: awx
+networks:
+  backend:
+    driver: bridge
+
